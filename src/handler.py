@@ -5,6 +5,7 @@ from util.aws import AWS
 from datetime import datetime, timedelta
 import os
 import json
+import sys
 from util.filter import Filter
 from util.Parser.article_parser import ArticleParser
 

@@ -51,7 +51,7 @@ class StackOverflow:
         #     query_params = self.build_query_params(params)
         else:
             query_params = self.build_query_params(params)
-        response = requests.get(url, params=query_params, verify=self.cert_path)
+        response = requests.get(url, params=query_params, verify=self.cert_path, timeout=30)
         response.raise_for_status()
         return response.json()
 
@@ -111,6 +111,7 @@ class StackOverflow:
             params = {"pagesize": page_size}
             if page > 0:
                 params["page"] = page
+            params["filter"] = self.articles_with_body_filter
             data = self._make_request("articles", params)
             articles.extend(data.get("items", []))
             has_more = data.get("has_more", False)
@@ -149,7 +150,7 @@ class StackOverflow:
         for i in range(0, len(article_ids), batch_size):
             batch = article_ids[i:i + batch_size]
             ids_param = ";".join(map(str, batch))
-            data = self._make_request(f"articles/{ids_param}", params={"fitler": self.articles_with_body_filter})
+            data = self._make_request(f"articles/{ids_param}", params={"filter": self.articles_with_body_filter})
             articles.extend(data.get("items", []))
 
         return articles

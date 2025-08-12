@@ -63,7 +63,6 @@ class ArticleParser(Parser):
 
         markdown_lines = []
         for child in self.soup.contents:
-            print(child)
             if hasattr(child, 'name'):
                 line = process_element(child)
                 if line:
@@ -76,7 +75,6 @@ class ArticleParser(Parser):
         return {
             "title": self.article_data.get("title"),
             "tags": self.article_data.get("tags", []),
-            "author": self.article_data.get("owner", {}).get("display_name"),
             "score": self.article_data.get("score"),
             "created": self.article_data.get("creation_date"),
             "link": self.article_data.get("link"),

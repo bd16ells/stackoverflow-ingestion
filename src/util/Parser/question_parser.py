@@ -73,7 +73,6 @@ class QuestionParser(Parser):
         question = {
             "title": self.response_data.get("title"),
             "tags": self.response_data.get("tags", []),
-            "author": self.response_data.get("owner", {}).get("display_name"),
             "score": self.response_data.get("score"),
             "created": self.response_data.get("creation_date"),
             "link": self.response_data.get("link"),
@@ -83,7 +82,6 @@ class QuestionParser(Parser):
 
         for answer in self.response_data.get("answers", []):
             parsed_answer = {
-                "author": answer.get("owner", {}).get("display_name"),
                 "score": answer.get("score"),
                 "created": answer.get("creation_date"),
                 "is_accepted": answer.get("is_accepted"),
