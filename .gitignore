@@ -209,3 +209,5 @@ __marimo__/
 
 ## custom
 src/tmp/*
+### my encrypted env vars
+secrets.txt.gpg 

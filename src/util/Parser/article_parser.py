@@ -63,6 +63,7 @@ class ArticleParser(Parser):
 
         markdown_lines = []
         for child in self.soup.contents:
+            print(child)
             if hasattr(child, 'name'):
                 line = process_element(child)
                 if line:

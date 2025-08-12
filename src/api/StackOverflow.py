@@ -1,7 +1,7 @@
 import requests
 
 class StackOverflow:
-    def __init__(self, api_url, api_token, from_date=None):
+    def __init__(self, api_url, api_token, from_date=None, cert_path=None):
         """
         Initialize the StackOverflow API client.
         
@@ -11,8 +11,10 @@ class StackOverflow:
         self.api_url = api_url
         self.api_token = api_token
         # self.headers = {"Authorization": f"Bearer {self.api_token}"}
-        self.with_body_filter = "!nNPvSNW(gA" # from sample API requests
+        self.articles_with_body_filter = "!nNPvSNW(gA" # from sample API requests
         self.from_date_filter = f"fromdate={from_date}" if from_date else None
+        self.questions_with_answers_and_body_filter = "!6WPIomnMNcVD9" # from sample api requests
+        self.cert_path = cert_path
 
     def build_query_params(self, params):
         """
@@ -22,7 +24,6 @@ class StackOverflow:
         :return: A dictionary of query parameters
         """
         query_params = {"key": self.api_token}
-        print(params)
         # Automatically add the date filter if provided
         if self.from_date_filter:
             query_params["fromdate"] = self.from_date_filter.split("=")[1]
@@ -33,7 +34,7 @@ class StackOverflow:
 
         return query_params
 
-    def _make_request(self, endpoint, params=None, add_body_filter=False):
+    def _make_request(self, endpoint, params=None):
         """
         Helper method to make a GET request to the API.
         
@@ -45,13 +46,12 @@ class StackOverflow:
         query_params = None
         if params is None:
             params = {}
-        if add_body_filter:
-            params.update({"filter": self.with_body_filter})
-            query_params = self.build_query_params(params)
+        # if add_body_filter:
+        #     params.update({"filter": self.articles_with_body_filter})
+        #     query_params = self.build_query_params(params)
         else:
             query_params = self.build_query_params(params)
-        print(query_params)
-        response = requests.get(url, params=query_params, verify="/Users/r2ubde/.aws/fnma-truststore-global.pem")
+        response = requests.get(url, params=query_params, verify=self.cert_path)
         response.raise_for_status()
         return response.json()
 
@@ -66,16 +66,35 @@ class StackOverflow:
         page = 0
         has_more = True
 
-        while has_more:
+        while has_more:  # limit to first 10 pages for testing
             params = {"pagesize": page_size}
             if page > 0:
                 params["page"] = page
+            params["filter"] = self.articles_with_body_filter
             data = self._make_request("questions", params)
             questions.extend(data.get("items", []))
             has_more = data.get("has_more", False)
             page += 1
 
         return questions
+    
+    def get_questions_answers(self, question_ids, page_size=100):
+        """
+        Get all questions from the API, handling pagination.
+        
+        :param page_size: Number of items per page
+        :return: List of questions
+        """
+        answers = []
+        batch_size = 25
+
+        for i in range(0, len(question_ids), batch_size):
+            batch = question_ids[i:i + batch_size]
+            ids_param = ";".join(map(str, batch))
+            ## uses a diff filter for body
+            data = self._make_request(f"questions/{ids_param}/answers", params={'filter': 'withbody'})
+            answers.extend(data.get("items", []))
+        return answers
 
     def get_articles(self, page_size=100):
         """
@@ -112,9 +131,9 @@ class StackOverflow:
         for i in range(0, len(question_ids), batch_size):
             batch = question_ids[i:i + batch_size]
             ids_param = ";".join(map(str, batch))
-            data = self._make_request(f"questions/{ids_param}", add_body_filter=True)
+            params = {"filter": self.questions_with_answers_and_body_filter}
+            data = self._make_request(f"questions/{ids_param}", params=params)
             questions.extend(data.get("items", []))
-
         return questions
 
     def get_articles_by_ids(self, article_ids):
@@ -130,8 +149,7 @@ class StackOverflow:
         for i in range(0, len(article_ids), batch_size):
             batch = article_ids[i:i + batch_size]
             ids_param = ";".join(map(str, batch))
-            print(f"articles/{ids_param}")
-            data = self._make_request(f"articles/{ids_param}", add_body_filter=True)
+            data = self._make_request(f"articles/{ids_param}", params={"fitler": self.articles_with_body_filter})
             articles.extend(data.get("items", []))
 
         return articles
